@@ -8,6 +8,6 @@
   tasks:
     - name: Create S3 bucket
       amazon.aws.s3_bucket:
-        name: my-test-aap-bucket-212121
+        name: sanju-test-212121
         state: present
         region: us-west-1
