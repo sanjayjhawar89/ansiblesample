@@ -1,0 +1,34 @@
+- name: Create Ec2 instances
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  collections:
+    - amazon.aws
+
+  vars:
+    region: us-west-1
+
+  tasks:
+    - name: Create VM
+      amazon.aws.ec2_instance:
+        name: stack001-vm
+        instance_type: t2.micro
+        image_id: "{{ image_id }}"
+        state: present
+        region: "{{ region }}"
+        key_name: "{{ key }}"
+        vpc_subnet_id: "{{ subnet_id }}"
+        network:
+          assign_public_ip: yes
+        wait: yes
+        wait_timeout: 500
+        tags:
+          deploymentID: "{{ deploymentID }}"
+          CostCenter: "{{ CostCenter }}"
+          Environment: Dev
+      register: vm
+
+    - name: Debug VM details
+      debug:
+        var: vm
