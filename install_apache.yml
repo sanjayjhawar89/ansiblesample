@@ -1,0 +1,52 @@
+---
+- name: Setup Apache on Ubuntu VM
+  hosts: all
+  become: yes
+  vars:
+    apache_packages:
+      - apache2
+
+  tasks:
+    # 1. Update apt cache
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    # 2. Install Apache
+    - name: Install Apache web server
+      apt:
+        name: "{{ apache_packages }}"
+        state: present
+
+    # 3. Enable mod_rewrite without using external collections
+    - name: Enable Apache rewrite module
+      command: a2enmod rewrite
+      args:
+        creates: /etc/apache2/mods-enabled/rewrite.load
+      notify: Restart Apache
+
+    # 4. Set proper Apache directory permissions (optional but good practice)
+    - name: Configure AllowOverride for .htaccess
+      copy:
+        dest: /etc/apache2/sites-available/000-default.conf
+        content: |
+          <VirtualHost *:80>
+              DocumentRoot /var/www/html
+              <Directory /var/www/html>
+                  AllowOverride All
+              </Directory>
+          </VirtualHost>
+      notify: Restart Apache
+
+    # 5. Ensure Apache service is enabled and started
+    - name: Ensure Apache service is enabled and running
+      service:
+        name: apache2
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Apache
+      service:
+        name: apache2
+        state: restarted
