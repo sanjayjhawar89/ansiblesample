@@ -1,22 +1,28 @@
-- hosts: localhost
+---
+- name: Azure VM provisioning
+  hosts: localhost
   connection: local
   gather_facts: no
+
+  collections:
+    - azure.azcollection
+
   tasks:
+
     - name: Create resource group
       azure_rm_resourcegroup:
         name: "{{ resource_group }}"
         location: "{{ location }}"
-        append_tags: True
-        tags: 
+        tags:
           deploymentID: "{{ deploymentID }}"
 
     - name: Create virtual network
       azure_rm_virtualnetwork:
         resource_group: "{{ resource_group }}"
         name: "{{ network_name }}"
-        address_prefixes: "{{ network_cidr }}"
-        append_tags: True
-        tags: 
+        address_prefixes:
+          - "{{ network_cidr }}"
+        tags:
           deploymentID: "{{ deploymentID }}"
 
     - name: Add subnet
@@ -31,48 +37,47 @@
         resource_group: "{{ resource_group }}"
         name: "{{ security_group }}"
         rules:
-          - name: 'allow_web_traffic'
+          - name: allow_web_traffic
             protocol: Tcp
             destination_port_range: "{{ tcp_ports }}"
             access: Allow
             priority: 1002
             direction: Inbound
-        append_tags: True
-        tags: 
+        tags:
           deploymentID: "{{ deploymentID }}"
 
-    - name: Create a network interface
+    - name: Create network interface
       azure_rm_networkinterface:
         name: "{{ nic_name }}"
         resource_group: "{{ resource_group }}"
         virtual_network: "{{ network_name }}"
         subnet_name: "{{ subnet_name }}"
         security_group: "{{ security_group }}"
-        append_tags: True
-        tags: 
-          deploymentID: "{{ deploymentID }}"
         ip_configurations:
           - name: default
-            primary: True
+            primary: true
+        tags:
+          deploymentID: "{{ deploymentID }}"
 
-    - name: Create VM without Storage Account
+    - name: Create VM without Storage Account (Managed Disk)
       azure_rm_virtualmachine:
         resource_group: "{{ resource_group }}"
         name: "{{ vm_name }}"
         vm_size: Standard_DS1_v2
         admin_username: "{{ username }}"
         admin_password: "{{ password }}"
-        network_interfaces: "{{ nic_name }}"
+        network_interface_names:
+          - "{{ nic_name }}"
         os_type: "{{ os_type }}"
         image:
           offer: "{{ offer }}"
           publisher: "{{ publisher }}"
           sku: "{{ sku }}"
           version: latest
-        managed_disk_type: "Standard_LRS"  # Ensure Managed Disk (no Storage Account)
-        append_tags: True
-        tags: 
+        managed_disk_type: Standard_LRS
+        tags:
           deploymentID: "{{ deploymentID }}"
+      register: vm
 
-    - debug: 
+    - debug:
         var: vm
