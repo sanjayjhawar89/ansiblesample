@@ -1,0 +1,15 @@
+# Core Azure packages
+azure-cli-core>=2.40.0
+azure-common>=1.1.28
+azure-identity>=1.12.0
+azure-mgmt-core>=1.3.2
+
+# Management packages
+azure-mgmt-compute>=30.0.0
+azure-mgmt-network>=25.0.0
+azure-mgmt-resource>=23.0.0
+azure-mgmt-storage>=21.0.0
+azure-mgmt-postgresqlflexibleservers>=1.0.0
+
+# Additional packages
+msrestazure>=0.6.4
