@@ -1,0 +1,7 @@
+- hosts: localhost
+  gather_facts: no
+  tasks:
+    - command: ansible-galaxy collection list
+      register: out
+    - debug:
+        var: out.stdout
