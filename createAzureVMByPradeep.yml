@@ -1,0 +1,89 @@
+---
+- name: Azure VM provisioning
+  hosts: localhost
+  connection: local
+  gather_facts: no
+ 
+  collections:
+    - azure.azcollection
+ 
+  tasks:
+ 
+    - name: Create resource group
+      azure.azcollection.azure_rm_resourcegroup:
+        name: "{{ resource_group }}"
+        location: "{{ location }}"
+        api_version: "2021-04-01"
+        tags:
+          deploymentID: "{{ deploymentID }}"
+ 
+    - name: Create virtual network
+      azure_rm_virtualnetwork:
+        resource_group: "{{ resource_group }}"
+        name: "{{ network_name }}"
+        address_prefixes:
+          - "{{ network_cidr }}"
+        api_version: "2021-02-01"
+        tags:
+          deploymentID: "{{ deploymentID }}"
+ 
+    - name: Add subnet
+      azure_rm_subnet:
+        resource_group: "{{ resource_group }}"
+        name: "{{ subnet_name }}"
+        address_prefix: "{{ subnet_cidr }}"
+        virtual_network: "{{ network_name }}"
+        api_version: "2021-02-01"
+ 
+    - name: Create Network Security Group
+      azure_rm_securitygroup:
+        resource_group: "{{ resource_group }}"
+        name: "{{ security_group }}"
+        api_version: "2021-02-01"
+        rules:
+          - name: allow_web_traffic
+            protocol: Tcp
+            destination_port_range: "{{ tcp_ports }}"
+            access: Allow
+            priority: 1002
+            direction: Inbound
+        tags:
+          deploymentID: "{{ deploymentID }}"
+ 
+    - name: Create network interface
+      azure_rm_networkinterface:
+        name: "{{ nic_name }}"
+        resource_group: "{{ resource_group }}"
+        virtual_network: "{{ network_name }}"
+        subnet_name: "{{ subnet_name }}"
+        security_group: "{{ security_group }}"
+        api_version: "2021-02-01"
+        ip_configurations:
+          - name: default
+            primary: true
+        tags:
+          deploymentID: "{{ deploymentID }}"
+ 
+    - name: Create VM without Storage Account (Managed Disk)
+      azure_rm_virtualmachine:
+        resource_group: "{{ resource_group }}"
+        name: "{{ vm_name }}"
+        vm_size: Standard_DS1_v2
+        admin_username: "{{ username }}"
+        admin_password: "{{ password }}"
+        network_interface_names:
+          - "{{ nic_name }}"
+        os_type: "{{ os_type }}"
+        api_version: "2021-07-01"
+        image:
+          offer: "{{ offer }}"
+          publisher: "{{ publisher }}"
+          sku: "{{ sku }}"
+          version: latest
+        managed_disk_type: Standard_LRS
+        tags:
+          deploymentID: "{{ deploymentID }}"
+      register: vm
+ 
+    - debug:
+        var: vm
