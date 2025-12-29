@@ -7,16 +7,8 @@
   tasks:
     - name: Login to Azure
       shell: |
-        az login --service-principal \
-          --username "{{ azure_client_id }}" \
-          --password "{{ azure_secret }}" \
-          --tenant "{{ azure_tenant }}"
-      no_log: false
- 
-    - name: Set subscription
-      shell: |
-        az account set --subscription "{{ azure_subscription_id }}"
- 
+        az login 
+        
     - name: Create resource group
       shell: |
         az group create \
