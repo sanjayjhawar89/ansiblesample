@@ -1,0 +1,82 @@
+---
+- name: Azure VM provisioning with Azure CLI
+  hosts: localhost
+  connection: local
+  gather_facts: no
+ 
+  tasks:
+    - name: Login to Azure using AAP credentials
+      shell: |
+        az login --service-principal \
+          --username "${AZURE_CLIENT_ID}" \
+          --password "${AZURE_SECRET}" \
+          --tenant "${AZURE_TENANT}"
+      no_log: true
+      environment:
+        AZURE_CLIENT_ID: "{{ lookup('env', 'AZURE_CLIENT_ID') }}"
+        AZURE_SECRET: "{{ lookup('env', 'AZURE_SECRET') }}"
+        AZURE_TENANT: "{{ lookup('env', 'AZURE_TENANT') }}"
+ 
+    - name: Set subscription
+      shell: |
+        az account set --subscription "${AZURE_SUBSCRIPTION_ID}"
+      environment:
+        AZURE_SUBSCRIPTION_ID: "{{ lookup('env', 'AZURE_SUBSCRIPTION_ID') }}"
+ 
+    - name: Create resource group
+      shell: |
+        az group create \
+          --name "{{ resource_group }}" \
+          --location "{{ location }}" \
+          --tags deploymentID="{{ deploymentID }}"
+ 
+    - name: Create virtual network
+      shell: |
+        az network vnet create \
+          --resource-group "{{ resource_group }}" \
+          --name "{{ network_name }}" \
+          --address-prefix "{{ network_cidr }}" \
+          --tags deploymentID="{{ deploymentID }}"
+ 
+    - name: Create subnet
+      shell: |
+        az network vnet subnet create \
+          --resource-group "{{ resource_group }}" \
+          --vnet-name "{{ network_name }}" \
+          --name "{{ subnet_name }}" \
+          --address-prefix "{{ subnet_cidr }}"
+ 
+    - name: Create Network Security Group
+      shell: |
+        az network nsg create \
+          --resource-group "{{ resource_group }}" \
+          --name "{{ security_group }}" \
+          --tags deploymentID="{{ deploymentID }}"
+          
+    - name: Create network interface
+      shell: |
+        az network nic create \
+          --resource-group "{{ resource_group }}" \
+          --name "{{ nic_name }}" \
+          --vnet-name "{{ network_name }}" \
+          --subnet "{{ subnet_name }}" \
+          --network-security-group "{{ security_group }}" \
+          --tags deploymentID="{{ deploymentID }}"
+ 
+    - name: Create VM
+      shell: |
+        az vm create \
+          --resource-group "{{ resource_group }}" \
+          --name "{{ vm_name }}" \
+          --size Standard_DS1_v2 \
+          --admin-username "{{ username }}" \
+          --admin-password "{{ password }}" \
+          --nics "{{ nic_name }}" \
+          --image "{{ publisher }}:{{ offer }}:{{ sku }}:latest" \
+          --storage-sku Standard_LRS \
+          --tags deploymentID="{{ deploymentID }}"
+      register: vm_output
+ 
+    - name: Display VM info
+      debug:
+        var: vm_output.stdout
