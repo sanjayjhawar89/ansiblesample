@@ -13,6 +13,10 @@
           --tenant "{{ azure_tenant }}"
       no_log: true
  
+    - name: Set subscription
+      shell: |
+        az account set --subscription "{{ azure_subscription_id }}"
+ 
     - name: Create resource group
       shell: |
         az group create \
