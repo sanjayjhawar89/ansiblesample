@@ -11,7 +11,7 @@
           --username "{{ azure_client_id }}" \
           --password "{{ azure_secret }}" \
           --tenant "{{ azure_tenant }}"
-      no_log: true
+      no_log: false
  
     - name: Set subscription
       shell: |
