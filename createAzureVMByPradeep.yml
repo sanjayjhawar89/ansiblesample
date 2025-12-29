@@ -3,19 +3,23 @@
   hosts: localhost
   connection: local
   gather_facts: no
- 
+
   collections:
     - azure.azcollection
- 
+
+  vars:
+    deploymentID: "{{ deploymentID }}"
+    location: "{{ location }}"
+
   tasks:
- 
+
     - name: Create resource group
       azure_rm_resourcegroup:
         name: "{{ resource_group }}"
         location: "{{ location }}"
         tags:
           deploymentID: "{{ deploymentID }}"
- 
+
     - name: Create virtual network
       azure_rm_virtualnetwork:
         resource_group: "{{ resource_group }}"
@@ -24,14 +28,14 @@
           - "{{ network_cidr }}"
         tags:
           deploymentID: "{{ deploymentID }}"
- 
+
     - name: Add subnet
       azure_rm_subnet:
         resource_group: "{{ resource_group }}"
         name: "{{ subnet_name }}"
         address_prefix: "{{ subnet_cidr }}"
         virtual_network: "{{ network_name }}"
- 
+
     - name: Create Network Security Group
       azure_rm_securitygroup:
         resource_group: "{{ resource_group }}"
@@ -45,7 +49,7 @@
             direction: Inbound
         tags:
           deploymentID: "{{ deploymentID }}"
- 
+
     - name: Create network interface
       azure_rm_networkinterface:
         name: "{{ nic_name }}"
@@ -58,7 +62,7 @@
             primary: true
         tags:
           deploymentID: "{{ deploymentID }}"
- 
+
     - name: Create VM with Managed Disk
       azure_rm_virtualmachine:
         resource_group: "{{ resource_group }}"
@@ -78,6 +82,6 @@
         tags:
           deploymentID: "{{ deploymentID }}"
       register: vm
- 
+
     - debug:
         var: vm
